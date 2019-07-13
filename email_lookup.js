@@ -8,11 +8,5 @@ const emailLookup = function (email, users) {
   return null;
 };
 
-  // const doesUserExist(email) {
-  //   for (...) {
-  //     // return true if found
-  //   }
-  //   return false
-  // }
 
 module.exports = emailLookup;

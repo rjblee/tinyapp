@@ -1,14 +1,14 @@
 <header>
   <nav class="navbar navbar-expand-md navbar-dark bg-success">
-    <a class="navbar-brand" href="/urls">TinyApp</a>
+    <a class="navbar-brand" href="/urls"><h2><b>TinyApp</b></h2></a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <a class="nav-item nav-link" href="/urls">My URLs</a>
-        <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <a class="nav-item nav-link" href="/urls"><h5><b>My URLs</b></h5></a>
+        <a class="nav-item nav-link" href="/urls/new"><h5><b>Create New URL</b></h5></a>
       </div>
     </div>
 
@@ -17,12 +17,14 @@
       <div class="form-inline" style="width: 300px; margin: 1em">
         <form class="form-inline" method="POST" action="/logout">
           Logged In As:<pre> </pre><b><%= user.email %></b><pre>   </pre>
-          <button type="submit">Logout</button>
+          <button type="submit" class="btn btn-light">Logout</button>
         </form>
       </div>
     <% } else { %>
-        <a class="nav-item nav-link" href="/register">Register</a>
-        <a class="nav-item nav-link" href="/login">Login</a>
+      <div class="container">
+        <a class="nav-item nav-link" href="/register"><button type="submit" class="btn btn-light">Register</button></a>
+        <a class="nav-item nav-link" href="/login"><button type="submit" class="btn btn-light">Login</button></a>
+        </div>
     <% } %>
   </div>
   </nav>
