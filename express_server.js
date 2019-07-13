@@ -2,10 +2,11 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser');
+const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const emailLookup = require("./email_lookup");
 const canYouLogin = require("./canYouLogin");
+const bcrypt = require("bcrypt");
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
@@ -80,9 +81,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   let id = req.cookies["user_id"]
   let foundUser = users[id];
-  let templateVars = {
-    user: foundUser
-  }
+  
   if (foundUser === urlDatabase[req.params.shortURL].userID) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
@@ -107,7 +106,11 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email
   const password = req.body.password
+  //const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+  
   let matchedUser = "";
+
+
 
   if (typeof canYouLogin (email, password, users) === 'object') {
     matchedUser = canYouLogin (email, password, users);
@@ -141,10 +144,15 @@ app.post("/register", (req, res) => {
     return res.status(400).send("The email address has already been used. Try another email.");
   } 
 
+  // Hash the password that we get from the body
+  // Save hashedPassword inside users[renderID]
+
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+
   users[renderID] = {
     id: renderID,
     email: req.body.email,
-    password: req.body.password
+    password: hashedPassword
   };
 
   res.cookie("user_id", renderID);
