@@ -2,25 +2,42 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require("cookie-parser");
+//const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bodyParser = require("body-parser");
-const emailLookup = require("./email_lookup");
+const emailLookup = require("./helpers");
 const canYouLogin = require("./canYouLogin");
 const bcrypt = require("bcrypt");
 
 app.set("view engine", "ejs");
-app.use(cookieParser());
+//app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieSession({
+  name: 'user_id',
+  keys: ['123abc'],
+  
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 const urlDatabase = {
   b2xVn2: { longURL: "http://www.lighthouselabs.ca", userID: "John" },
   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
+function generateRandomString() {
+  let random6 = "";
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < 6; i++) {
+    random6 += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return random6;
+};
 
 
 app.get("/urls", (req, res) => {
-  let id = req.cookies["user_id"]
+  //let id = req.cookies["user_id"] 
+  let id = req.session.user_id;
   let foundUser = users[id];
   let templateVars = {
     urls: urlDatabase,
@@ -35,7 +52,8 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  let id = req.cookies["user_id"]
+  //let id = req.cookies["user_id"]
+  let id = req.session.user_id;
   let foundUser = users[id];
   let templateVars = {
     user: foundUser
@@ -50,26 +68,18 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL",(req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]]};
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id]};
   res.render("urls_show", templateVars); 
 });
 
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: req.cookies["user_id"]};
+  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: req.session.user_id};
   console.log(urlDatabase);
   res.redirect("/urls/" + shortURL);
 });
 
-function generateRandomString() {
-  let random6 = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 6; i++) {
-    random6 += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return random6;
-};
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
@@ -79,19 +89,20 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  let id = req.cookies["user_id"]
-  let foundUser = users[id];
-  
+  let id = req.session.user_id;
+  let foundUser = users[id].id;
+
   if (foundUser === urlDatabase[req.params.shortURL].userID) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
+    
   } else {
     res.status(403).send("Cannot edit or delete this URL.");
   }
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL;
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 
@@ -106,11 +117,8 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email
   const password = req.body.password
-  //const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   
   let matchedUser = "";
-
-
 
   if (typeof canYouLogin (email, password, users) === 'object') {
     matchedUser = canYouLogin (email, password, users);
@@ -118,12 +126,14 @@ app.post("/login", (req, res) => {
     res.status(403).send("No matched email or password found");
   }
 
-  res.cookie("user_id", matchedUser.id);
+  //res.cookie("user_id", matchedUser.id);
+  req.session.user_id = matchedUser.id;
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  //res.clearCookie("user_id");
+  req.session.user_id = null;
   res.redirect("/urls"); 
 });
 
@@ -155,7 +165,8 @@ app.post("/register", (req, res) => {
     password: hashedPassword
   };
 
-  res.cookie("user_id", renderID);
+  //res.cookie("user_id", renderID);
+  req.session.user_id = renderID;
   res.redirect("/urls");
 });
 
@@ -170,4 +181,4 @@ const users = {
     email: "user2@example.com", 
     password: "dishwasher-funk"
   }
-}
+};
